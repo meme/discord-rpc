@@ -85,7 +85,7 @@ func readFromPipe(conn net.Conn, v interface{}) (error) {
 }
 
 func (client *Client) Connect(clientId string) (error) {
-	conn, err := GetDiscordRpcPipe()
+	conn, err := getDiscordRpcPipe()
 
 	if err != nil {
 		return err

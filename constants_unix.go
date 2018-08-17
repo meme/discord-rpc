@@ -8,6 +8,6 @@ import (
     "path"
 )
 
-func GetDiscordRpcPipe() (net.Conn, error) {
+func getDiscordRpcPipe() (net.Conn, error) {
 	return net.Dial("unix", path.Join(os.Getenv("XDG_RUNTIME_DIR"), "discord-ipc-0"))
 }

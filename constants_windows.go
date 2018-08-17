@@ -8,7 +8,7 @@ import (
 	"net"
 )
 
-func GetDiscordRpcPipe() (net.Conn, error) {
+func getDiscordRpcPipe() (net.Conn, error) {
 	var timeout, _ = time.ParseDuration("5m")
 	return winio.DialPipe("\\\\?\\pipe\\discord-ipc-0", &timeout)
 }
