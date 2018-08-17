@@ -13,12 +13,12 @@ import (
 const rpcSetActivityDirective = "SET_ACTIVITY"
 const rpcErrorEvent = "ERROR"
 
-type DiscordRpcClient struct {
-	Conn net.Conn
+type Client struct {
+	conn net.Conn
 }
 
 func writeCommandToPipe(conn net.Conn, command string, arguments interface{}) (error) {
-	err := writeToPipe(conn, 1, RpcCommand{
+	err := writeToPipe(conn, 1, rpcCommand{
 		Command:   command,
 		Arguments: arguments,
 		Nonce:     string(time.Now().Unix()),
@@ -84,40 +84,42 @@ func readFromPipe(conn net.Conn, v interface{}) (error) {
 	return json.Unmarshal(b, v)
 }
 
-func CreateRpcClient(clientId string) (*DiscordRpcClient, error) {
+func (client *Client) Connect(clientId string) (error) {
 	conn, err := GetDiscordRpcPipe()
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = writeToPipe(conn, 0, RpcHandshake{Version: 1, ClientId: clientId})
+	err = writeToPipe(conn, 0, rpcHandshake{Version: 1, ClientId: clientId})
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var response map[string]interface{}
 	err = readFromPipe(conn, &response)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if response["code"] != nil {
-		return nil, errors.New("failed to complete handshake")
+		return errors.New("failed to complete handshake")
 	}
 
-	return &DiscordRpcClient{Conn: conn}, nil
+	client.conn = conn
+
+	return nil
 }
 
-func (client *DiscordRpcClient) SetActivity(state, details string, largeImage, largeText string) (error) {
-	return writeCommandToPipe(client.Conn, rpcSetActivityDirective, SetActivityCommand{
+func (client *Client) SetActivity(state, details, largeImage, largeText string) (error) {
+	return writeCommandToPipe(client.conn, rpcSetActivityDirective, setActivityCommand{
 		ProcessId: os.Getpid(),
-		Activity: &ActivityArgument{
+		Activity: &activityArgument{
 			State:   state,
 			Details: details,
-			Assets: &AssetArgument{
+			Assets: &assetArgument{
 				LargeImage: largeImage,
 				LargeText:  largeText,
 			},
@@ -126,8 +128,8 @@ func (client *DiscordRpcClient) SetActivity(state, details string, largeImage, l
 	})
 }
 
-func (client *DiscordRpcClient) ClearActivity() (error) {
-	return writeCommandToPipe(client.Conn, rpcSetActivityDirective, &SetActivityCommand{
+func (client *Client) ClearActivity() (error) {
+	return writeCommandToPipe(client.conn, rpcSetActivityDirective, &setActivityCommand{
 		ProcessId: os.Getpid(),
 		Activity:  nil,
 	})
